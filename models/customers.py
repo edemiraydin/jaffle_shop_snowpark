@@ -10,7 +10,5 @@ def model(dbt, session):
 
     df_customer_orders = df_ord.group_by(col("customer_id")).agg([f.min(col("order_date")).alias("first_order"), f.max("order_date").alias("most_recent_order"), f.count("order_id").alias("number_of_orders")]) 
     df_customer_payments = df_pay.join(df_ord, df_ord.order_id == df_pay.order_id, join_type="left").select(df_ord.customer_id, df_pay.amount).group_by(df_ord.customer_id).agg([f.sum(df_pay.amount).alias("total_amount")]) 
-    df_temp = df_cust.join(df_customer_orders, df_customer_orders.customer_id == df_cust.customer_id, join_type="left").drop(df_customer_orders.customer_id).with_column_renamed(df_cust.customer_id, "customer_id")
-    df_final = df_temp.join(df_customer_payments, df_temp.customer_id == df_customer_payments.customer_id, join_type="left").select(df_temp.customer_id.alias("customer_id"), df_temp.first_name,df_temp.last_name, df_temp.first_order, df_temp.most_recent_order, df_temp.number_of_orders,  df_customer_payments.total_amount.alias("customer_lifetime_value"))
-
+    df_final = df_cust.join(df_customer_orders, df_customer_orders.customer_id == df_cust.customer_id, join_type="left").drop(df_customer_orders.customer_id).with_column_renamed(df_cust.customer_id, "customer_id").join(df_customer_payments, df_cust.customer_id == df_customer_payments.customer_id, join_type="left").drop(df_customer_payments.customer_id).with_column_renamed(df_cust.customer_id, "customer_id").with_column_renamed(df_customer_payments.total_amount,"customer_lifetime_value") 
     return df_final
